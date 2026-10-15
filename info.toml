@@ -229,3 +229,87 @@ hint = """
 Write `case 'a':` and the other vowels one after another with no statements
 in between, then one `return 1;`. `default:` handles everything else.
 See K&R 3.4 and Beej 3.3.5."""
+
+# TYPES
+
+[[exercises]]
+name = "types1"
+dir = "07_types"
+strict = true
+hint = """
+`sizeof` gives a `size_t`, and printf has its own length modifier for it.
+For the second part, `sizeof(double)` is the size of one double.
+See K&R 2.2 and Beej 14."""
+
+[[exercises]]
+name = "types2"
+dir = "07_types"
+hint = """
+`int` is usually 32 bits, so INT_MAX is the end of the line for it.
+C has a signed integer type that is guaranteed to be at least 64 bits wide.
+See K&R 2.2 and Beej 14."""
+
+[[exercises]]
+name = "types3"
+dir = "07_types"
+hint = """
+'a' through 'z' are consecutive codes, and so are 'A' through 'Z'.
+The distance from a lowercase letter to 'a' is the same as from its
+uppercase form to 'A'. Handle 'z' separately.
+See K&R 2.7 and Beej 14."""
+
+[[exercises]]
+name = "types4"
+dir = "07_types"
+strict = true
+hint = """
+The loop has to reach -1 to stop, and an unsigned type cannot hold -1.
+Which type can?
+See K&R 2.2 and Beej 14."""
+
+[[exercises]]
+name = "types5"
+dir = "07_types"
+hint = """
+If either operand of `/` is a double, the division keeps the fraction.
+For `approx_equal`, look at how far apart `a` and `b` are, whichever is
+larger: `fabs` from <math.h> gives the absolute value of a double.
+See K&R 2.7 and Beej 15."""
+
+# OPERATORS
+
+[[exercises]]
+name = "operators1"
+dir = "08_operators"
+hint = """
+The position of `++` or `--` decides whether you get the value from before
+or after the change.
+See K&R 2.8 and Beej 3.2."""
+
+[[exercises]]
+name = "operators2"
+dir = "08_operators"
+strict = true
+hint = """
+Read each expression the way the compiler groups it: `/` before `+`, and
+`==` before `&`. Parentheses make it group the way you mean.
+See K&R 2.9 and 2.12, and Beej 3.2."""
+
+[[exercises]]
+name = "operators3"
+dir = "08_operators"
+hint = """
+A `?:` can be nested inside another one: the false branch of the first
+test can be a second test.
+See K&R 2.11 and Beej 3.2."""
+
+# QUIZ 1
+
+[[exercises]]
+name = "quiz1"
+dir = "quizzes"
+hint = """
+Write each function with an `int` parameter list and an `int` return type,
+above `main`. `%` gives the remainder, which tells you whether one number
+divides another; the gcd needs a `while` loop.
+See K&R 2.5, 3.5 and Beej 3.2."""
