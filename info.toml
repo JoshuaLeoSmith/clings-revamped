@@ -676,3 +676,71 @@ hint = """
 Call `strtol(argv[i], &end, 10)`. If `end` still points at the start, no
 digits were read; if `*end` is not '\\0', something follows the number.
 See K&R 5.10 and Beej 18."""
+
+# FUNCTION POINTERS
+
+[[exercises]]
+name = "funcptr1"
+dir = "20_function_pointers"
+hint = """
+Read a declaration from the name outwards: `*op(int, int)` makes `op` a
+function first. Parentheses around `*op` make it a pointer first, and that
+pointer can then point to a function. See K&R 5.11 and Beej 23.7."""
+
+[[exercises]]
+name = "funcptr2"
+dir = "20_function_pointers"
+hint = """
+Loop over the `n` values and call `f` on each, the same way you would call
+any function by name, storing the result back in the array.
+See K&R 5.11 and Beej 23.7."""
+
+[[exercises]]
+name = "funcptr3"
+dir = "20_function_pointers"
+hint = """
+`x` and `y` are addresses; `*x` and `*y` are the ints. Return -1, 0 or 1
+by comparing those; `(a > b) - (a < b)` is a common idiom.
+See K&R 5.11 and Beej 23.7."""
+
+# RECURSION
+
+[[exercises]]
+name = "recursion1"
+dir = "21_recursion"
+hint = """
+A recursive function needs a case it answers without calling itself. Check
+for small `n` first and return 1 there. See K&R 4.10."""
+
+[[exercises]]
+name = "recursion2"
+dir = "21_recursion"
+hint = """
+Find each base case first: any number to the power 0 is 1, and a single
+digit is its own digit sum. Otherwise, do one step of the work and let a
+call on a smaller input do the rest. See K&R 4.10."""
+
+# BITS
+
+[[exercises]]
+name = "bits1"
+dir = "22_bits"
+hint = """
+Build a mask with `1u << n`. AND with a mask tests a bit, OR sets it, and
+AND with the inverted mask (`~`) clears it. See K&R 2.9 and Beej 24."""
+
+[[exercises]]
+name = "bits2"
+dir = "22_bits"
+hint = """
+For `get_bit`, shift `x` right by `n` and AND with 1. For the mask, add a
+`u` suffix to the constant so the shift happens on an unsigned int.
+See K&R 2.9 and Beej 24."""
+
+[[exercises]]
+name = "bits3"
+dir = "22_bits"
+hint = """
+Each flag is a mask with one bit set. `&` with the mask tells you whether
+that bit is set; `^` with the mask flips it.
+See K&R 2.9 and 6.9, and Beej 24."""
