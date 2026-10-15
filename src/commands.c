@@ -2,6 +2,8 @@
 
 #include <stdio.h>
 #include <string.h>
+#include "buf.h"
+#include "embedded.h"
 #include "exercise.h"
 #include "term.h"
 
@@ -21,18 +23,23 @@ static void append_trimmed(struct buf *out, const char *s) {
     buf_append(out, s, n);
 }
 
+/* Report an unknown exercise name with suggestions. */
+static void report_unknown(const struct app_state *st, const char *name) {
+    struct buf sugg;
+    buf_init(&sugg);
+    info_closest(st->info, name, &sugg);
+    fprintf(stderr, "clings: no exercise named \"%s\"\n", name);
+    if (sugg.len) fprintf(stderr, "Did you mean:\n%s", sugg.data);
+    if (sugg.len && sugg.data[sugg.len - 1] != '\n') fputc('\n', stderr);
+    buf_free(&sugg);
+}
+
 /* Select the exercise called name (if any). False after reporting an unknown name. */
 static bool select_exercise(struct app_state *st, const char *name) {
     if (!name) return true;
     long idx = info_find(st->info, name);
     if (idx < 0) {
-        struct buf sugg;
-        buf_init(&sugg);
-        info_closest(st->info, name, &sugg);
-        fprintf(stderr, "clings: no exercise named \"%s\"\n", name);
-        if (sugg.len) fprintf(stderr, "Did you mean:\n%s", sugg.data);
-        if (sugg.len && sugg.data[sugg.len - 1] != '\n') fputc('\n', stderr);
-        buf_free(&sugg);
+        report_unknown(st, name);
         return false;
     }
     state_set_current(st, (size_t)idx);
@@ -199,6 +206,34 @@ int cmd_check_all(struct app_state *st) {
     else
         buf_appends(&out, "\n");
     render_final_message(info, &out);
+    flush_out(&out);
+    buf_free(&out);
+    return 0;
+}
+
+int cmd_reset(struct app_state *st, const char *name) {
+    long idx = info_find(st->info, name);
+    if (idx < 0) {
+        report_unknown(st, name);
+        return 2;
+    }
+    const struct exercise_info *ex = &st->info->exercises[idx];
+    const char *text = embedded_lookup(ex->path);
+    if (!text) {
+        fprintf(stderr,
+                "clings: no original is embedded for %s; run 'clings dev update' and rebuild\n",
+                name);
+        return 2;
+    }
+    if (!file_write(ex->path, text, strlen(text))) {
+        fprintf(stderr, "clings: cannot write %s\n", ex->path);
+        return 2;
+    }
+    struct buf out;
+    buf_init(&out);
+    buf_appends(&out, "The exercise ");
+    term_file_link(&out, ex->path);
+    buf_appends(&out, " has been reset\n");
     flush_out(&out);
     buf_free(&out);
     return 0;

@@ -71,6 +71,24 @@ expect_exit 0 "$BIN" run intro1
 expect_contains "Successfully ran"
 expect_contains "Next exercise: exercises/00_intro/intro2.c"
 
+# reset restores the pristine text (after dev update embeds it)
+expect_exit 0 "$BIN" dev update
+expect_contains "Updated src/embedded.c"
+if grep -qF 'exercises/00_intro/intro2.c' src/embedded.c; then
+    pass "embedded.c lists intro2"
+else
+    fail "embedded.c lists intro2"
+fi
+cp exercises/00_intro/intro1.c "$WORK/intro1.pristine"
+echo "// scribble" >> exercises/00_intro/intro1.c
+expect_exit 0 "$BIN" reset intro1
+expect_contains "has been reset"
+if cmp -s exercises/00_intro/intro1.c "$WORK/intro1.pristine"; then
+    pass "reset restored intro1.c"
+else
+    fail "reset restored intro1.c"
+fi
+
 # state file contents
 if printf "DON'T EDIT THIS FILE!\n\nintro2\n\nintro1\n" | cmp -s - .clings-state.txt; then
     pass "state file after run intro1"

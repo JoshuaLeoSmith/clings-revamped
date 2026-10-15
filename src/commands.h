@@ -11,6 +11,8 @@ int cmd_run(struct app_state *st, const char *name);
 int cmd_hint(struct app_state *st, const char *name);
 int cmd_list(struct app_state *st);
 int cmd_check_all(struct app_state *st);
+/* Rewrite the exercise file from its embedded original; name is required. */
+int cmd_reset(struct app_state *st, const char *name);
 
 /* Append the finish banner and the trimmed final message. */
 void render_final_message(const struct info_file *info, struct buf *out);

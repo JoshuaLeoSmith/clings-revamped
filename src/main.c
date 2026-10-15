@@ -6,6 +6,7 @@
 #include <sys/stat.h>
 #include "buf.h"
 #include "commands.h"
+#include "dev.h"
 #include "exercise.h"
 #include "info.h"
 #include "state.h"
@@ -129,6 +130,10 @@ int main(int argc, char **argv) {
         rc = cmd_list(&st);
     } else if (!strcmp(cmd, "check-all")) {
         rc = cmd_check_all(&st);
+    } else if (!strcmp(cmd, "reset")) {
+        rc = cmd_reset(&st, args[1]);
+    } else if (!strcmp(cmd, "dev") && !strcmp(args[1], "update")) {
+        rc = dev_update(&info);
     } else {
         fprintf(stderr, "clings: %s not implemented yet\n", cmd);
         rc = 2;
