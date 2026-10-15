@@ -14,6 +14,16 @@ int cmd_check_all(struct app_state *st);
 /* Rewrite the exercise file from its embedded original; name is required. */
 int cmd_reset(struct app_state *st, const char *name);
 
+/* Write out to stdout, flush, and clear out. */
+void flush_out(struct buf *out);
+/* Append s without leading and trailing whitespace. */
+void append_trimmed(struct buf *out, const char *s);
+/* Append "PREFIX<link to path>\n". */
+void file_link_line(struct buf *out, const char *prefix, const char *path);
+/* Append "Solution for comparison: <link>\n" when ex's solution file
+ * exists; returns whether it did. */
+bool solution_line(const struct exercise_info *ex, struct buf *out);
+
 /* Append the finish banner and the trimmed final message. */
 void render_final_message(const struct info_file *info, struct buf *out);
 

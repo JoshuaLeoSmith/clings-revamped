@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 #include "buf.h"
 #include "commands.h"
 #include "dev.h"
@@ -11,6 +12,7 @@
 #include "info.h"
 #include "state.h"
 #include "term.h"
+#include "watch.h"
 
 #define VERSION "0.1.0"
 #define INFO_PATH "info.toml"
@@ -52,6 +54,20 @@ static bool is_dir(const char *path) {
     return stat(path, &sb) == 0 && S_ISDIR(sb.st_mode);
 }
 
+/* First start: show the welcome message and wait for Enter. */
+static void show_welcome(const struct info_file *info) {
+    struct buf out;
+    buf_init(&out);
+    term_clear(&out);
+    append_trimmed(&out, info->welcome_message);
+    buf_appends(&out, "\n\nPress ENTER to continue ");
+    flush_out(&out);
+    term_press_enter();
+    term_clear(&out);
+    flush_out(&out);
+    buf_free(&out);
+}
+
 int main(int argc, char **argv) {
     struct cli cli = {getenv("CLINGS_EDIT_CMD")};
     if (cli.edit_cmd && !*cli.edit_cmd) cli.edit_cmd = NULL;
@@ -81,7 +97,7 @@ int main(int argc, char **argv) {
     const char *cmd = args[0];
     /* Validate the command line before touching the project. */
     if (!cmd) {
-        if (!term_is_tty()) {
+        if (!term_is_tty() || !isatty(STDIN_FILENO)) {
             fputs("clings: watch mode needs a terminal; use 'clings run' instead\n", stderr);
             return 2;
         }
@@ -125,8 +141,8 @@ int main(int argc, char **argv) {
 
     int rc;
     if (!cmd) {
-        fputs("clings: watch mode not implemented yet\n", stderr);
-        rc = 2;
+        if (fresh) show_welcome(&info);
+        rc = watch_run(&st, &cli);
     } else if (!strcmp(cmd, "run")) {
         rc = cmd_run(&st, args[1]);
     } else if (!strcmp(cmd, "hint")) {
@@ -145,7 +161,6 @@ int main(int argc, char **argv) {
         fprintf(stderr, "clings: %s not implemented yet\n", cmd);
         rc = 2;
     }
-    (void)cli;
 
     state_free(&st);
     info_free(&info);

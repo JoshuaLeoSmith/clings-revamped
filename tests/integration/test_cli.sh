@@ -97,6 +97,37 @@ else
     sed 's/^/     | /' .clings-state.txt
 fi
 
+# watch mode through a pseudo-terminal (state is not fresh: no welcome prompt)
+if command -v script >/dev/null 2>&1; then
+    LAST="watch: q through script"
+    (sleep 2; printf 'q') | script -qec "$BIN" /dev/null >"$WORK/watch.txt" 2>&1
+    got=$?
+    OUT="$(cat "$WORK/watch.txt")"
+    if [ "$got" -eq 0 ]; then
+        pass "exit 0: $LAST"
+    else
+        fail "exit 0 (got $got): $LAST"
+        printf '%s\n' "$OUT" | sed 's/^/     | /'
+    fi
+    expect_contains "Current exercise:"
+    expect_contains "Progress:"
+    expect_contains "We hope you're enjoying learning C!"
+
+    # stdout is a terminal but stdin is not
+    LAST="watch: stdin not a TTY through script"
+    script -qec "$BIN </dev/null" /dev/null >"$WORK/watch2.txt" 2>&1
+    got=$?
+    OUT="$(cat "$WORK/watch2.txt")"
+    if [ "$got" -eq 2 ]; then
+        pass "exit 2: $LAST"
+    else
+        fail "exit 2 (got $got): $LAST"
+    fi
+    expect_contains "needs a terminal"
+else
+    echo "skip script not found; watch mode checks skipped"
+fi
+
 # run intro2: compile error
 expect_exit 1 "$BIN" run intro2
 expect_contains "error:"

@@ -5,16 +5,16 @@
 #include "buf.h"
 #include "embedded.h"
 #include "exercise.h"
+#include "list.h"
 #include "term.h"
 
-static void flush_out(struct buf *out) {
+void flush_out(struct buf *out) {
     if (out->len) fwrite(out->data, 1, out->len, stdout);
     fflush(stdout);
     buf_clear(out);
 }
 
-/* Append s without leading and trailing whitespace. */
-static void append_trimmed(struct buf *out, const char *s) {
+void append_trimmed(struct buf *out, const char *s) {
     if (!s) return;
     while (*s == ' ' || *s == '\t' || *s == '\n' || *s == '\r') s++;
     size_t n = strlen(s);
@@ -50,8 +50,7 @@ static const struct exercise_info *current_ex(const struct app_state *st) {
     return &st->info->exercises[st->current];
 }
 
-/* "PREFIX<link>\n" */
-static void file_link_line(struct buf *out, const char *prefix, const char *path) {
+void file_link_line(struct buf *out, const char *prefix, const char *path) {
     buf_appends(out, prefix);
     term_file_link(out, path);
     buf_appends(out, "\n");
@@ -64,6 +63,25 @@ static void done_line(struct buf *out, const char *name, bool done) {
     buf_appends(out, name);
     term_color(out, TERM_RESET);
     buf_appends(out, "\n");
+}
+
+bool solution_line(const struct exercise_info *ex, struct buf *out) {
+    struct buf sol;
+    buf_init(&sol);
+    exercise_solution_path(ex, &sol);
+    bool exists = file_exists(sol.data);
+    if (exists) {
+        term_color(out, TERM_BOLD);
+        buf_appends(out, "Solution");
+        term_color(out, TERM_RESET);
+        buf_appends(out, " for comparison: ");
+        term_color(out, TERM_CYAN);
+        term_file_link(out, sol.data);
+        term_color(out, TERM_RESET);
+        buf_appends(out, "\n");
+    }
+    buf_free(&sol);
+    return exists;
 }
 
 void render_final_message(const struct info_file *info, struct buf *out) {
@@ -105,17 +123,9 @@ int cmd_run(struct app_state *st, const char *name) {
 
     struct buf sol;
     buf_init(&sol);
-    exercise_solution_path(ex, &sol);
-    if (file_exists(sol.data)) {
+    if (solution_line(ex, &sol)) {
         buf_appends(&out, "\n");
-        term_color(&out, TERM_BOLD);
-        buf_appends(&out, "Solution");
-        term_color(&out, TERM_RESET);
-        buf_appends(&out, " for comparison: ");
-        term_color(&out, TERM_CYAN);
-        term_file_link(&out, sol.data);
-        term_color(&out, TERM_RESET);
-        buf_appends(&out, "\n");
+        buf_append(&out, sol.data, sol.len);
     }
     buf_free(&sol);
 
@@ -152,10 +162,7 @@ int cmd_hint(struct app_state *st, const char *name) {
 int cmd_list(struct app_state *st) {
     struct buf out;
     buf_init(&out);
-    for (size_t i = 0; i < st->info->n; i++) {
-        buf_printf(&out, "%s%3zu  %s  %s\n", i == st->current ? "> " : "  ", i + 1,
-                   st->done[i] ? "DONE   " : "PENDING", st->info->exercises[i].path);
-    }
+    list_render(st, &out);
     flush_out(&out);
     buf_free(&out);
     return 0;
