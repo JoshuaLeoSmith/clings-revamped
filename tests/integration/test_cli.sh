@@ -176,7 +176,7 @@ for f in CMakeLists.txt Makefile src/main.c tests/unit/test_buf.c; do
     if [ -f "$f" ]; then pass "copy includes $f"; else fail "copy includes $f"; fi
 done
 expect_exit 0 "$BIN" dev check
-expect_contains "All 2 exercises OK"
+expect_contains "All $(grep -c '^\[\[exercises\]\]' info.toml) exercises OK"
 
 # dev check: a solution that fails
 cp solutions/00_intro/intro2.c "$WORK/intro2_sol.pristine"

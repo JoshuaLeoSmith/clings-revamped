@@ -44,3 +44,106 @@ dir = "00_intro"
 hint = """
 Read the compiler message carefully: it names the header that is missing
 and even suggests the line you need to add."""
+
+# VARIABLES
+
+[[exercises]]
+name = "variables1"
+dir = "01_variables"
+hint = """
+The compiler says `x` is undeclared. A declaration starts with the type
+of the variable, followed by its name.
+See K&R 1.2 and Beej 3.1."""
+
+[[exercises]]
+name = "variables2"
+dir = "01_variables"
+strict = true
+hint = """
+The compiler warns that `x` is used uninitialized. C does not give local
+variables a starting value; you have to supply one.
+See K&R 2.4."""
+
+[[exercises]]
+name = "variables3"
+dir = "01_variables"
+hint = """
+The division itself produces 0.75. Look at the type of the variable the
+result is stored in: what does it do with the part after the point?
+See K&R 2.2 and 2.7."""
+
+[[exercises]]
+name = "variables4"
+dir = "01_variables"
+hint = """
+A `const` variable can be given a value only once: in its declaration.
+See K&R 2.4."""
+
+[[exercises]]
+name = "variables5"
+dir = "01_variables"
+hint = """
+Double quotes make a string; single quotes make one character.
+See K&R 2.3."""
+
+# FUNCTIONS
+
+[[exercises]]
+name = "functions1"
+dir = "02_functions"
+hint = """
+You can either move the definition above `main`, or add a declaration
+(a prototype) above `main`: the first line of the definition, ending in `;`.
+See K&R 1.7."""
+
+[[exercises]]
+name = "functions2"
+dir = "02_functions"
+hint = """
+Read the compiler message and compare the call with the parameter list
+of `ring`. How many times should it ring?
+See K&R 1.7."""
+
+[[exercises]]
+name = "functions3"
+dir = "02_functions"
+strict = true
+hint = """
+Computing a value is not the same as giving it back to the caller.
+Some languages return the last expression automatically; C does not.
+See K&R 4.1."""
+
+[[exercises]]
+name = "functions4"
+dir = "02_functions"
+hint = """
+`x` is a copy of `a`, not `a` itself. Instead of changing the copy, make
+`increment` give back the new value, and store it in `a`.
+See K&R 1.8."""
+
+# IF
+
+[[exercises]]
+name = "if1"
+dir = "03_if"
+hint = """
+Compare `a` with `b` in an `if`, and return one of them in each branch.
+Remove the `(void)` lines once you use the parameters.
+See K&R 3.2."""
+
+[[exercises]]
+name = "if2"
+dir = "03_if"
+strict = true
+hint = """
+One `=` and two `==` do very different things in C. Which one compares?
+See K&R 3.2."""
+
+[[exercises]]
+name = "if3"
+dir = "03_if"
+strict = true
+hint = """
+An `if` without braces controls only the one statement right after it.
+Which statements should run only for high scores?
+See K&R 3.2 and Beej 3.3.1."""
