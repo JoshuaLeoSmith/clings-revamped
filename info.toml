@@ -147,3 +147,85 @@ hint = """
 An `if` without braces controls only the one statement right after it.
 Which statements should run only for high scores?
 See K&R 3.2 and Beej 3.3.1."""
+
+# LOOPS
+
+[[exercises]]
+name = "loops1"
+dir = "04_loops"
+hint = """
+Work out by hand which values `i` takes for `sum_to(1)`. Is `n` itself
+ever added?
+See K&R 1.3."""
+
+[[exercises]]
+name = "loops2"
+dir = "04_loops"
+hint = """
+Each pass through the loop should remove one digit from `n`. Integer
+division throws away the remainder: what is 123 / 10?
+See K&R 3.5."""
+
+[[exercises]]
+name = "loops3"
+dir = "04_loops"
+hint = """
+`do { ... } while (condition);` runs the body first and checks afterwards.
+Note the semicolon after the closing parenthesis.
+See K&R 3.6."""
+
+[[exercises]]
+name = "loops4"
+dir = "04_loops"
+hint = """
+One keyword leaves a loop immediately; another skips to the next pass.
+In the second function, test for a multiple of 3 with `%` first.
+See K&R 3.7."""
+
+# IO
+
+[[exercises]]
+name = "io1"
+dir = "05_io"
+stdin = "hello\nworld\n"
+hint = """
+`while ((c = getchar()) != EOF)` reads until the input ends. Declare `c`
+as an `int` and keep a `long` counter. Newlines are characters too.
+See K&R 1.5.1-1.5.2."""
+
+[[exercises]]
+name = "io2"
+dir = "05_io"
+stdin = "the quick brown fox\njumps over\n\nthe lazy dog\n"
+hint = """
+Each '\n' ends a line. Keep a flag saying whether you are inside a word:
+a blank clears it, and a non-blank while it is clear starts a new word.
+See K&R 1.5.4."""
+
+[[exercises]]
+name = "io3"
+dir = "05_io"
+strict = true
+stdin = "3 4\n"
+hint = """
+`scanf` needs to know where `a` and `b` live, not what they hold.
+Which operator gives the address of a variable?
+See K&R 7.4 and Beej 9.4."""
+
+# SWITCH
+
+[[exercises]]
+name = "switch1"
+dir = "06_switch"
+strict = true
+hint = """
+Each case needs a statement that leaves the switch once its work is done.
+See K&R 3.4."""
+
+[[exercises]]
+name = "switch2"
+dir = "06_switch"
+hint = """
+Write `case 'a':` and the other vowels one after another with no statements
+in between, then one `return 1;`. `default:` handles everything else.
+See K&R 3.4 and Beej 3.3.5."""
