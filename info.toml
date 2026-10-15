@@ -612,3 +612,67 @@ hint = """
 Look for a statement that holds a whole block, runs it exactly once, and
 still wants a `;` after it. A loop whose condition is always false fits.
 See K&R 4.11.2 and Beej 19."""
+
+# MULTIFILE
+
+[[exercises]]
+name = "multifile1"
+dir = "17_multifile"
+sources = ["mathutil.c"]
+hint = """
+The compiler only knows what this file tells it. Which file in this
+directory declares `add` and `multiply`? Include it with quotes, not <>.
+See K&R 4.5 and Beej 17."""
+
+[[exercises]]
+name = "multifile2"
+dir = "17_multifile"
+sources = ["counter.c"]
+hint = """
+A global from another file is declared, not defined, with `extern`.
+A `static` function cannot be called from outside its file; counter.h
+lists what you may call. See K&R 4.5 and Beej 17."""
+
+# FILE I/O
+
+[[exercises]]
+name = "fileio1"
+dir = "18_file_io"
+hint = """
+Check `fopen`'s result for NULL first. Then loop while `fgets(line,
+sizeof line, f)` does not return NULL, and `fclose` before returning.
+See K&R 7.5 and 7.7, and Beej 9."""
+
+[[exercises]]
+name = "fileio2"
+dir = "18_file_io"
+hint = """
+Open with "w" to write and "r" to read, check each for NULL, and close
+each file before returning. Loop while `fscanf` returns 1.
+See K&R 7.5 and Beej 9."""
+
+[[exercises]]
+name = "fileio3"
+dir = "18_file_io"
+hint = """
+`fopen` returns NULL for a file that does not exist. Check for that right
+after the call, before anything else touches `f`.
+See K&R 7.5 and Beej 9."""
+
+# COMMAND LINE
+
+[[exercises]]
+name = "cmdline1"
+dir = "19_cmdline"
+hint = """
+argv[0] is the program name. For joining, `snprintf(out + used, cap - used,
+...)` never overflows; its return value tells you how much it wrote, or
+would have written. See K&R 5.10 and Beej 18."""
+
+[[exercises]]
+name = "cmdline2"
+dir = "19_cmdline"
+hint = """
+Call `strtol(argv[i], &end, 10)`. If `end` still points at the start, no
+digits were read; if `*end` is not '\\0', something follows the number.
+See K&R 5.10 and Beej 18."""
