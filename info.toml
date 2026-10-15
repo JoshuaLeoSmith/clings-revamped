@@ -744,3 +744,66 @@ hint = """
 Each flag is a mask with one bit set. `&` with the mask tells you whether
 that bit is set; `^` with the mask flips it.
 See K&R 2.9 and 6.9, and Beej 24."""
+
+# LINKED LISTS
+
+[[exercises]]
+name = "linkedlist1"
+dir = "23_linked_list"
+hint = """
+`push_front` needs a new node from `malloc(sizeof *node)`. Its `next` is
+the current head, and then `*head` should point at it. `length` walks
+`p = p->next` until `p` is NULL. See K&R 6.5 and Beej 20.3."""
+
+[[exercises]]
+name = "linkedlist2"
+dir = "23_linked_list"
+hint = """
+Give the new node a NULL `next`. If `*head` is NULL, the new node is the
+whole list; otherwise walk while `p->next != NULL` and link it there.
+See K&R 6.5 and Beej 20.3."""
+
+[[exercises]]
+name = "linkedlist3"
+dir = "23_linked_list"
+hint = """
+Keep a pointer to the previous node while you walk. To unlink a node, point
+its predecessor (or `*head`, if it is the first) at its `next`, then free
+it. In `free_list`, read `next` BEFORE you free a node. See K&R 6.5."""
+
+# TEXT
+
+[[exercises]]
+name = "text1"
+dir = "24_text"
+hint = """
+Pass each char to the <ctype.h> functions as `(unsigned char)*s`. For
+`capitalize_words`, remember whether the previous char was a space (or
+there was none): that decides `toupper` or `tolower`. See K&R 7.8.2."""
+
+[[exercises]]
+name = "text2"
+dir = "24_text"
+hint = """
+Three loops in a row: skip `isspace`, look at one sign char, then while
+`isdigit` do `n = 10 * n + (c - '0')`. Apply the sign at the end.
+See K&R 2.7 and Beej 15.1."""
+
+[[exercises]]
+name = "text3"
+dir = "24_text"
+hint = """
+Count the chars of the result to size `line`, and let `snprintf` know the
+size with `sizeof line`. `strtok` takes the string on its first call and
+NULL on later calls, returning NULL when no words are left. See Beej 15.1."""
+
+# QUIZ 3
+
+[[exercises]]
+name = "quiz3"
+dir = "quizzes"
+hint = """
+Write each function above `main` with the parameter list from the comment.
+The stack is memory4's growable array; pop takes from index `len - 1`.
+For `join`, add up the lengths first, `malloc` once, then copy the pieces.
+See K&R 7.8.5 and Beej 12."""
