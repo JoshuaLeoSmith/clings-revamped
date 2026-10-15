@@ -4,6 +4,7 @@ C reads and writes files through a `FILE *` from `<stdio.h>`: `fopen(path, mode)
 The familiar functions have file versions: `fprintf`, `fscanf` and `fgets` take the `FILE *`, and `fscanf` returns how many values it converted, which is how you notice the end of the input.
 Close every file you open with `fclose`, on every path out of the function, or its buffered output may never reach the disk.
 Relative paths are relative to the program's current directory; clings runs these exercises from this directory, so `fileio1.txt` here is found as just `"fileio1.txt"`.
+If you run these exercises from CLion instead, set the run configuration's "Working directory" to `exercises/18_file_io`, because CLion starts programs in its build directory.
 
 ## Further information
 

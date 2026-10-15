@@ -370,9 +370,9 @@ exit nonzero. "test" means the CHECK block fails.
 - quiz1: `price_of_apples` (rustlings homage), `is_leap_year` (K&R), `gcd` with a loop; test.
 
 ### 09_arrays (K&R 1.6, 5.7; Beej 6)
-- arrays1: declare `int squares[5]`, fill in a loop; wrong size and index; test.
+- arrays1: TODO to declare `int squares[6]` before a loop that fills it; compile error (undeclared).
 - arrays2: `sizeof(a) / sizeof(a[0])` in `main` works; the same inside a function does not; strict (`-Wsizeof-array-argument`); fix by passing the length; test.
-- arrays3: `i <= 5` writes past `int a[5]`; ASan stack-buffer-overflow; test.
+- arrays3: `i <= 5` writes past `int a[5]`; UBSan bounds report (`index 5 out of bounds`); test.
 - arrays4: `int grid[3][4]`; implement `sum_row(int grid[][4], int row)` and `sum_all`; test.
 
 ### 10_strings (K&R 1.9, 5.5, 7.8.1; Beej 7, 21) array notation only; pointers come next
@@ -385,7 +385,7 @@ exit nonzero. "test" means the CHECK block fails.
 ### 11_pointers (K&R 5.1-5.4; Beej 5, 11, 23)
 - pointers1: `int *p = x;`; compile error; fix `&x`; then `*p = 20` changes `x`; test.
 - pointers2: implement `swap(int *a, int *b)`; test (callback to functions4).
-- pointers3: `first_or(const int *p, int fallback)` dereferences NULL; ASan SEGV; test.
+- pointers3: `first_or(const int *p, int fallback)` dereferences NULL; UBSan null-load report (ASan SEGV without UBSan); test.
 - pointers4: pointer arithmetic: implement `sum(const int *begin, const int *end)`; `*(p + 2) == p[2]`; test.
 - pointers5: pointer to pointer: implement `swap_strings(const char **a, const char **b)`; test.
 
@@ -395,7 +395,7 @@ exit nonzero. "test" means the CHECK block fails.
 - structs3: `birthday(struct Person p)` by value changes nothing; implement `make_point` returning a struct; test.
 - structs4: nested `struct Rect { struct Point tl, br; }` area; `total_age(const struct Person people[], int n)`; test.
 
-### 13_enums_typedef (K&R 6.7; Beej 10, 22)
+### 13_enums_typedef (K&R 2.3, 6.7; Beej 10, 22)
 - enums1: `enum Color` missing an enumerator; `switch` without that case; strict (`-Wswitch`); test.
 - enums2: explicit values `enum HttpStatus { OK = 200, ... }`; implement `is_error`; test.
 - typedef1: `typedef struct { ... } Point;` then `struct Point p;`; compile error; `typedef unsigned char byte;`; test.
@@ -428,7 +428,7 @@ exit nonzero. "test" means the CHECK block fails.
 ### 18_file_io (K&R 7.5-7.7; Beej 9) data files in the exercise dir, cwd is the exercise dir
 - fileio1: implement `count_lines("fileio1.txt")` with `fopen`/`fgets`/`fclose`; test.
 - fileio2: write 1..5 with `fprintf` to `fileio2_out.txt`, read back with `fscanf`; test.
-- fileio3: `sum_numbers(path)` must return -1 when `fopen` fails; unsolved crashes on a missing file; ASan SEGV; test.
+- fileio3: `sum_numbers(path)` must return -1 when `fopen` fails; unsolved crashes on a missing file; sanitizer report (UBSan null argument or ASan SEGV); test.
 
 ### 19_cmdline (K&R 5.10; Beej 18) tests pass a fake `argv`
 - cmdline1: implement `count_args` and `join_args(int argc, char **argv, char *out, size_t cap)`; test.

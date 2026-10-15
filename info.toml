@@ -25,7 +25,6 @@ final_message = """
 We hope you enjoyed learning about C!
 Remember that the `solutions/` folder holds a reference solution for every
 exercise, so it's worth comparing them with your own once more.
-If you change or add exercises, `clings dev check` verifies the exercise set.
 """
 
 # INTRO
