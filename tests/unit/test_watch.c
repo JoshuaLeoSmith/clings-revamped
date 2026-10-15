@@ -34,6 +34,7 @@ int main(void) {
     CHECK(watch_key_action('x') == WATCH_RESET);
     CHECK(watch_key_action('r') == WATCH_RERUN);
     CHECK(watch_key_action('q') == WATCH_QUIT);
+    CHECK(watch_key_action(0x04) == WATCH_QUIT); /* Ctrl-D */
     CHECK(watch_key_action('z') == WATCH_NONE);
     CHECK(watch_key_action(0) == WATCH_NONE);
 

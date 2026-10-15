@@ -6,6 +6,15 @@
 
 static int clings_failed, clings_passed;
 
+#if defined(__GNUC__) || defined(__clang__)
+/* Under clings, stdout is a pipe and so fully buffered. Sanitizers end the
+ * program with _exit, which would drop anything still in the buffer, so make
+ * stdout line-buffered before main runs. */
+static void __attribute__((constructor)) clings_linebuffer_stdout(void) {
+    setvbuf(stdout, NULL, _IOLBF, 0);
+}
+#endif
+
 #define CHECK(cond)                                                        \
     do {                                                                   \
         if (cond) {                                                        \
@@ -13,6 +22,7 @@ static int clings_failed, clings_passed;
         } else {                                                           \
             clings_failed++;                                               \
             printf("FAIL %s:%d: %s\n", __FILE__, __LINE__, #cond);         \
+            fflush(stdout);                                                \
         }                                                                  \
     } while (0)
 
@@ -26,6 +36,7 @@ static int clings_failed, clings_passed;
             clings_failed++;                                               \
             printf("FAIL %s:%d: %s is %lld, expected %lld\n", __FILE__,    \
                    __LINE__, #actual, clings_a, clings_e);                 \
+            fflush(stdout);                                                \
         }                                                                  \
     } while (0)
 
@@ -39,6 +50,7 @@ static int clings_failed, clings_passed;
             clings_failed++;                                               \
             printf("FAIL %s:%d: %s is '%c', expected '%c'\n", __FILE__,    \
                    __LINE__, #actual, clings_a, clings_e);                 \
+            fflush(stdout);                                                \
         }                                                                  \
     } while (0)
 
@@ -57,6 +69,7 @@ static int clings_failed, clings_passed;
             printf(", expected ");                                         \
             clings_print_str(clings_e);                                    \
             printf("\n");                                                  \
+            fflush(stdout);                                                \
         }                                                                  \
     } while (0)
 
@@ -70,6 +83,7 @@ static int clings_failed, clings_passed;
             clings_failed++;                                               \
             printf("FAIL %s:%d: %s is %g, expected %g\n", __FILE__,        \
                    __LINE__, #actual, clings_a, clings_e);                 \
+            fflush(stdout);                                                \
         }                                                                  \
     } while (0)
 
@@ -92,9 +106,11 @@ static inline int clings_summary(void) {
     int total = clings_passed + clings_failed;
     if (clings_failed == 0) {
         printf("All %d checks passed\n", total);
+        fflush(stdout);
         return 0;
     }
     printf("%d of %d checks FAILED\n", clings_failed, total);
+    fflush(stdout);
     return 1;
 }
 

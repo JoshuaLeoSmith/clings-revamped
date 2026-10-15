@@ -71,6 +71,14 @@ expect_exit 0 "$BIN" run intro1
 expect_contains "Successfully ran"
 expect_contains "Next exercise: exercises/00_intro/intro2.c"
 
+# state file contents
+if printf "DON'T EDIT THIS FILE!\n\nintro2\n\nintro1\n" | cmp -s - .clings-state.txt; then
+    pass "state file after run intro1"
+else
+    fail "state file after run intro1"
+    sed 's/^/     | /' .clings-state.txt
+fi
+
 # reset restores the pristine text (after dev update embeds it)
 expect_exit 0 "$BIN" dev update
 expect_contains "Updated src/embedded.c"
@@ -89,22 +97,35 @@ else
     fail "reset restored intro1.c"
 fi
 
-# state file contents
-if printf "DON'T EDIT THIS FILE!\n\nintro2\n\nintro1\n" | cmp -s - .clings-state.txt; then
-    pass "state file after run intro1"
-else
-    fail "state file after run intro1"
-    sed 's/^/     | /' .clings-state.txt
-fi
+# reset marks the exercise pending again; running it makes it DONE again
+expect_exit 0 "$BIN" list
+line="$(printf '%s\n' "$OUT" | grep 'intro1')"
+case "$line" in
+    *PENDING*) pass "  list: intro1 is PENDING after reset" ;;
+    *) fail "  list: intro1 is PENDING after reset: '$line'" ;;
+esac
+expect_exit 0 "$BIN" run intro1
 
 # watch mode through a pseudo-terminal (state is not fresh: no welcome prompt)
 if command -v script >/dev/null 2>&1; then
+    # Wait (up to 30 s) until the first check has been drawn, so the q is not
+    # discarded as type-ahead, then press q and close stdin (Ctrl-D also quits).
     LAST="watch: q through script"
-    (sleep 2; printf 'q') | script -qec "$BIN" /dev/null >"$WORK/watch.txt" 2>&1
+    : >"$WORK/watch.txt"
+    (
+        for _ in $(seq 60); do
+            grep -qF 'Current exercise:' "$WORK/watch.txt" && break
+            sleep 0.5
+        done
+        printf 'q'
+    ) | timeout 60 script -qec "$BIN" /dev/null >"$WORK/watch.txt" 2>&1
     got=$?
     OUT="$(cat "$WORK/watch.txt")"
     if [ "$got" -eq 0 ]; then
         pass "exit 0: $LAST"
+    elif [ "$got" -eq 124 ]; then
+        fail "watch mode did not quit within 60 s: $LAST"
+        printf '%s\n' "$OUT" | sed 's/^/     | /'
     else
         fail "exit 0 (got $got): $LAST"
         printf '%s\n' "$OUT" | sed 's/^/     | /'
@@ -115,11 +136,13 @@ if command -v script >/dev/null 2>&1; then
 
     # stdout is a terminal but stdin is not
     LAST="watch: stdin not a TTY through script"
-    script -qec "$BIN </dev/null" /dev/null >"$WORK/watch2.txt" 2>&1
+    timeout 60 script -qec "$BIN </dev/null" /dev/null >"$WORK/watch2.txt" 2>&1
     got=$?
     OUT="$(cat "$WORK/watch2.txt")"
     if [ "$got" -eq 2 ]; then
         pass "exit 2: $LAST"
+    elif [ "$got" -eq 124 ]; then
+        fail "script did not finish within 60 s: $LAST"
     else
         fail "exit 2 (got $got): $LAST"
     fi

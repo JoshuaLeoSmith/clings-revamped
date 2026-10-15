@@ -5,6 +5,7 @@ project(clings C)
 
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
+set(CMAKE_C_EXTENSIONS OFF)
 
 option(CLINGS_SOLUTIONS "Add solution targets" OFF)
 
@@ -59,6 +60,7 @@ endforeach()
 add_test(NAME cli
     COMMAND ${CMAKE_SOURCE_DIR}/tests/integration/test_cli.sh $<TARGET_FILE:clings>
     WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
+set_tests_properties(cli PROPERTIES TIMEOUT 900)
 
 # --- BEGIN GENERATED (clings dev update) ---
 clings_exercise(intro1 00_intro)

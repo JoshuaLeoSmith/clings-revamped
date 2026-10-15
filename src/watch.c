@@ -24,6 +24,7 @@ enum watch_action watch_key_action(int key) {
     case 'x': return WATCH_RESET;
     case 'r': return WATCH_RERUN;
     case 'q': return WATCH_QUIT;
+    case 0x04: return WATCH_QUIT; /* Ctrl-D: raw mode delivers VEOF as a byte */
     default: return WATCH_NONE;
     }
 }
@@ -113,11 +114,20 @@ static void open_editor(const struct watch *w) {
     free(cmd);
 }
 
+/* Set when drain_stdin swallowed Ctrl-D or hit EOF: the input is gone, so
+ * watch mode must still end even though the key itself was discarded. */
+static bool stdin_closed;
+
 /* Discard keys typed while a check was running. */
 static void drain_stdin(void) {
     struct pollfd pfd = {STDIN_FILENO, POLLIN, 0};
     char c;
-    while (poll(&pfd, 1, 0) > 0 && (pfd.revents & POLLIN) && read(STDIN_FILENO, &c, 1) == 1) {
+    while (poll(&pfd, 1, 0) > 0 && (pfd.revents & (POLLIN | POLLHUP))) {
+        if (read(STDIN_FILENO, &c, 1) != 1) {
+            stdin_closed = true;
+            break;
+        }
+        if (c == 0x04) stdin_closed = true;
     }
 }
 
@@ -278,6 +288,10 @@ int watch_run(struct app_state *st, const struct cli *cli) {
 
     int rc = 0;
     for (;;) {
+        if (stdin_closed) { /* Ctrl-D or EOF arrived during a check */
+            quit_message();
+            break;
+        }
         struct pollfd pfd = {STDIN_FILENO, POLLIN, 0};
         int r = poll(&pfd, 1, POLL_MS);
         if (r < 0) {

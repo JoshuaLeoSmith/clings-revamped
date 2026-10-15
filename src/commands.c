@@ -236,6 +236,7 @@ int cmd_reset(struct app_state *st, const char *name) {
         fprintf(stderr, "clings: cannot write %s\n", ex->path);
         return 2;
     }
+    state_mark_pending(st, (size_t)idx); /* the original is unsolved again */
     struct buf out;
     buf_init(&out);
     buf_appends(&out, "The exercise ");

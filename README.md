@@ -134,7 +134,7 @@ clings compiles the exercise with:
 ```sh
 cc -std=c11 -Wall -Wextra -Wshadow -g \
    -fsanitize=address,undefined -fno-sanitize-recover=all \
-   -I include -I exercises/DIR -o .clings-build/NAME exercises/DIR/NAME.c -lm
+   -I include -I exercises/DIR -o .clings-build/NAME exercises/DIR/NAME.c [exercises/DIR/HELPER.c ...] -lm
 ```
 
 - Warnings are shown but do not fail the exercise, except in exercises marked
@@ -145,7 +145,10 @@ cc -std=c11 -Wall -Wextra -Wshadow -g \
   that print a `FAIL file:line: ...` line for each one that does not hold.
 - A failed run ends with a red line such as `exited with status 1`,
   `crashed with SIGSEGV`, or `killed after 5 seconds, is there an infinite
-  loop?`. Every run is stopped after 5 seconds, and output is cut off at 64 KiB.
+  loop?`. Every run is stopped after 5 seconds.
+- A program that prints more than 64 KiB of output is stopped and the
+  exercise fails, with the red line `stopped after 64 KiB of output, is there
+  an infinite loop?`.
 
 ### Reading a sanitizer report
 

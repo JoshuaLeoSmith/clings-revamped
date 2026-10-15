@@ -64,6 +64,9 @@ static void append_failure(struct buf *output, const struct proc_result *r, int 
         else
             buf_printf(output, "killed after %d seconds, is there an infinite loop?",
                        timeout_ms / 1000);
+    } else if (r->truncated) {
+        /* The runner killed it for flooding the output; not a crash. */
+        buf_appends(output, "stopped after 64 KiB of output, is there an infinite loop?");
     } else if (r->exited) {
         buf_printf(output, "exited with status %d", r->status);
     } else {
@@ -73,7 +76,6 @@ static void append_failure(struct buf *output, const struct proc_result *r, int 
         else
             buf_printf(output, "crashed with signal %d (%s)", r->signal, strsignal(r->signal));
     }
-    if (r->truncated) buf_appends(output, " (output truncated at 64 KiB)");
     term_color(output, TERM_RESET);
     buf_appends(output, "\n");
 }

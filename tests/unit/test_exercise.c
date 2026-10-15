@@ -30,6 +30,12 @@ static bool contains(const struct buf *b, const char *s) {
     return b->data && strstr(b->data, s) != NULL;
 }
 
+/* Offset of s in b, or -1 when absent. */
+static long find(const struct buf *b, const char *s) {
+    const char *p = b->data ? strstr(b->data, s) : NULL;
+    return p ? (long)(p - b->data) : -1;
+}
+
 int main(void) {
     char cwd[PATH_MAX];
     if (!getcwd(cwd, sizeof cwd)) return 1;
@@ -77,6 +83,10 @@ int main(void) {
     write_text("solutions/t/sol.c", "int main(void){return 0;}\n");
     write_text("exercises/t/uses_header.c",
                "#include \"clings.h\"\nint main(void){CHECK(1); return clings_summary();}\n");
+    write_text("exercises/t/leak.c",
+               "#include <stdlib.h>\n#include \"clings.h\"\n"
+               "int main(void){printf(\"before leak\\n\"); CHECK_EQ_INT(1, 2);\n"
+               "char *p = malloc(64); p[0] = 1; return clings_summary();}\n");
 
     /* path helpers */
     {
@@ -180,6 +190,18 @@ int main(void) {
         CHECK(contains(&out, "AddressSanitizer"));
     }
 
+    /* output printed before a sanitizer exit is kept (stdout is a pipe) */
+    {
+        EX(ex, "leak");
+        CHECK(!exercise_check(&ex, NULL, &out));
+        long lsan = find(&out, "LeakSanitizer");
+        long before = find(&out, "before leak");
+        long fail = find(&out, "FAIL");
+        CHECK(lsan >= 0);
+        CHECK(before >= 0 && before < lsan);
+        CHECK(fail >= 0 && fail < lsan);
+    }
+
     /* without sanitizers the same program dies from a signal */
     {
         EX(ex, "segv");
@@ -194,7 +216,8 @@ int main(void) {
     {
         EX(ex, "flood");
         CHECK(!exercise_check(&ex, NULL, &out));
-        CHECK(contains(&out, " (output truncated at 64 KiB)\n"));
+        CHECK(contains(&out, "\nstopped after 64 KiB of output, is there an infinite loop?\n"));
+        CHECK(!contains(&out, "SIGKILL"));
     }
 
     /* timeout */

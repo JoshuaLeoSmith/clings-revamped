@@ -34,8 +34,7 @@ name = "intro1"
 dir = "00_intro"
 skip_check_unsolved = true
 hint = """
-Enter `n` to move on to the next exercise.
-You might need to press ENTER after typing `n`."""
+Enter `n` to move on to the next exercise."""
 
 [[exercises]]
 name = "intro2"

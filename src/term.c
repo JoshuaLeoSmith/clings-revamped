@@ -121,6 +121,7 @@ static void install_hooks(void) {
     sigemptyset(&sa.sa_mask);
     sigaction(SIGINT, &sa, NULL);
     sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGQUIT, &sa, NULL);
 }
 
 void term_raw_on(void) {
