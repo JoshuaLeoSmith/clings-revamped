@@ -1,0 +1,19 @@
+# Reference books stay local, never committed
+*.pdf
+
+# Runner build output
+/clings
+*.o
+/build/
+/cmake-build-*/
+/.clings-build/
+
+# Learner progress
+/.clings-state.txt
+
+# Editors
+/.idea/
+*.swp
+
+# Files written by the file I/O exercises
+*_out.txt
