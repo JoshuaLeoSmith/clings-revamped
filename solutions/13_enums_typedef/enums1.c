@@ -1,0 +1,35 @@
+// Fix: BLUE joins the enum and the switch gets its case. With no `default:`,
+// -Wswitch reports any enumerator a switch forgets, so new ones get handled.
+/*
+ * enums1
+ *
+ * An enum names a set of int constants. The tests use `BLUE`, which
+ * `enum Color` does not have yet, so first the file does not compile: add
+ * it. Then the compiler warns that the switch in `color_name` does not
+ * handle `BLUE` (with no `default:`, gcc checks every enumerator has a
+ * `case`), and warnings count as errors here: add the case.
+ * See K&R 2.3 and Beej 22.
+ */
+
+#include "clings.h"
+
+enum Color { RED, GREEN, BLUE };
+
+const char *color_name(enum Color c) {
+    switch (c) {
+    case RED:
+        return "red";
+    case GREEN:
+        return "green";
+    case BLUE:
+        return "blue";
+    }
+    return "unknown";
+}
+
+int main(void) {
+    // Don't change the tests!
+    CHECK_EQ_STR(color_name(BLUE), "blue");
+    CHECK_EQ_STR(color_name(RED), "red");
+    return clings_summary();
+}
