@@ -508,3 +508,107 @@ Write each function above `main` with the parameter list from the comment.
 Divide as `double`s for the average, walk a string until its '\\0', and
 for `trim_newline` look at the char just before the end.
 See K&R 5.5, 6.3 and Beej 7."""
+
+# MEMORY
+
+[[exercises]]
+name = "memory1"
+dir = "14_memory"
+hint = """
+Every pointer you get from `malloc` must be handed to one function exactly
+once, after the last time the memory is used.
+See K&R 7.8.5 and Beej 12."""
+
+[[exercises]]
+name = "memory2"
+dir = "14_memory"
+hint = """
+`malloc` does not clear the memory it returns. Its sibling `calloc` takes a
+count and a size, and does.
+See K&R 7.8.5 and Beej 12."""
+
+[[exercises]]
+name = "memory3"
+dir = "14_memory"
+hint = """
+Once memory is freed, `msg` must not be read through again. Which line is
+the last one that uses `msg`?
+See K&R 7.8.5 and Beej 12."""
+
+[[exercises]]
+name = "memory4"
+dir = "14_memory"
+hint = """
+When `len == cap`, pick a new capacity, call `realloc(v->data, new_cap *
+sizeof(int))`, and only if the result is not NULL store it and the new cap.
+Then write the value at index `len` and add one to `len`.
+See K&R 7.8.5 and Beej 12."""
+
+[[exercises]]
+name = "memory5"
+dir = "14_memory"
+hint = """
+Count the bytes `strcpy` writes for "memory": the six letters, and one
+more. How many does `strlen` count?
+See K&R 7.8.5 and Beej 12."""
+
+# SCOPE
+
+[[exercises]]
+name = "scope1"
+dir = "15_scope"
+hint = """
+A name is visible only until the `}` that closes the block it was declared
+in. Declare `answer` outside the `if`, and only assign it inside.
+See K&R 4.8 and Beej 13."""
+
+[[exercises]]
+name = "scope2"
+dir = "15_scope"
+hint = """
+One keyword in front of the local's declaration changes how long it lives
+without changing where it can be named.
+See K&R 4.6 and Beej 16."""
+
+[[exercises]]
+name = "scope3"
+dir = "15_scope"
+strict = true
+hint = """
+Inside `bump`, which `counter` does `counter++` change? The global is
+already declared and visible there.
+See K&R 4.4 and Beej 13."""
+
+# PREPROCESSOR
+
+[[exercises]]
+name = "preprocessor1"
+dir = "16_preprocessor"
+hint = """
+Write out `int items[MAX_ITEMS];` by hand with the macro's replacement text
+pasted in, character for character.
+See K&R 4.11.2 and Beej 19."""
+
+[[exercises]]
+name = "preprocessor2"
+dir = "16_preprocessor"
+hint = """
+Expand `SQUARE(2 + 1)` and `100 / SQUARE(5)` by hand. Parentheses around
+each use of `x` fix one; parentheses around the whole body fix the other.
+See K&R 4.11.2 and Beej 19."""
+
+[[exercises]]
+name = "preprocessor3"
+dir = "16_preprocessor"
+hint = """
+`#define MAX_USERS 50` must come before the first line that mentions it.
+Note that `#if` did not complain: an undefined name counts as 0 there.
+See K&R 4.11.3 and Beej 19."""
+
+[[exercises]]
+name = "preprocessor4"
+dir = "16_preprocessor"
+hint = """
+Look for a statement that holds a whole block, runs it exactly once, and
+still wants a `;` after it. A loop whose condition is always false fits.
+See K&R 4.11.2 and Beej 19."""
