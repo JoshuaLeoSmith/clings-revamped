@@ -20,7 +20,11 @@ Items the task reviews and the final whole-branch review judged real but not wor
 - Linux only: `src/watch.c` uses `st_mtim`; macOS needs `st_mtimespec` behind an `#ifdef`.
 - `src/main.c`: with a fresh state file, the welcome "Press ENTER" prompt blocks on a closed stdin (only reachable under a pty harness such as `script`; the integration test never starts from a fresh state).
 
+- `src/watch.c` `drain_stdin`: treats `read() == -1` with `EINTR` as stdin closed (the main `read_key` path retries); retry on `EINTR` before setting the closed flag. In the `x` reset confirmation, Ctrl-D cancels instead of quitting.
+
 ## Tests
+
+- `tests/unit/test_clings_h.c` and the `leak.c` case in `test_exercise.c` pass because of the line-buffering constructor alone; nothing tests the `fflush` calls on their own, and `find(&out, "FAIL")` also matches `checks FAILED`.
 
 - No unit test pins the "file missing at snapshot, still missing → unchanged" watch rule, the all-done path of `run`, `state_set_current`'s return when the save fails, or several `info.toml` parse edges (trailing backslash, empty array, key with no value, CRLF).
 - `tests/unit/test_term.c` depends on the working directory being the repo root; `test_exercise.c` unsets `CC`/`CLINGS_NO_SANITIZE` instead of restoring them; the proc timeout test's margin (0.7 s of 1.0 s) may flake under load.
