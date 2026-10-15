@@ -20,3 +20,6 @@
 
 # SDD scratch workspace
 /.superpowers/
+
+# Unit test binaries
+/tests/unit/bin/
