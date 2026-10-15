@@ -92,7 +92,7 @@ script on PATH).
 clings                       watch mode (default)
 clings run [NAME]            check one exercise (current if NAME omitted) and print output
 clings hint [NAME]           print the hint
-clings reset NAME            restore the original exercise file (asks y/n unless --yes)
+clings reset NAME            restore the original exercise file (no prompt; watch-mode `x` confirms)
 clings list                  print all exercises with DONE/PENDING and the current marker
 clings check-all             check every exercise, update the state file, report pending
 clings dev check             author gate (section 10)
@@ -101,7 +101,8 @@ clings --help | --version
 ```
 
 Global options: `--edit-cmd CMD` (or env `CLINGS_EDIT_CMD`) runs `CMD PATH`
-detached whenever the current exercise changes. Env `CC` selects the compiler
+whenever the current exercise changes, detached (double fork, output to
+`/dev/null`, never waited on) so a blocking launcher cannot stall the watcher. Env `CC` selects the compiler
 (default `cc`). Env `CLINGS_NO_SANITIZE=1` drops the sanitizer flags for
 toolchains that lack them.
 
@@ -120,6 +121,8 @@ $CC -std=c11 -Wall -Wextra -Wshadow -g \
     -o .clings-build/NAME exercises/NN_topic/NAME.c [exercises/NN_topic/SOURCE.c ...]
 ```
 
+Solutions build to `.clings-build/NAME_sol`.
+
 - `strict = true` in `info.toml` adds `-Werror`. Otherwise warnings are shown
   but do not fail the exercise.
 - Solutions compile with the same line plus `-Werror`, with paths under
@@ -130,8 +133,8 @@ $CC -std=c11 -Wall -Wextra -Wshadow -g \
 
 Run (only if compilation succeeded):
 
-- Working directory: the exercise directory (`exercises/NN_topic`), or the
-  solution directory for solutions.
+- Working directory: the exercise directory (`exercises/NN_topic`) for both
+  exercise and solution runs, so data files resolve the same way for both.
 - stdin: the `stdin` string from `info.toml` if present, otherwise `/dev/null`.
 - stdout and stderr merged and captured, capped at 64 KiB (then the process is
   killed and a truncation note is appended).
@@ -221,7 +224,9 @@ welcome message is shown. The file is rewritten in full on every change.
 ### 8.3 Embedded originals and `reset`
 
 `clings dev update` regenerates `src/embedded.c`, a table of
-`{ path, contents }` for every exercise `.c` file, from the pristine tree. It is
+`{ path, contents }` for every exercise `.c` file (including quizzes), from the
+pristine tree. Contents are emitted as C string literals, one source line per
+file line, so diffs stay readable. It is
 committed, so the learner's edits never change it and rebuilding the runner is
 always safe. `reset` writes the embedded contents back to the path. `dev check`
 fails if the table is stale.
@@ -247,7 +252,9 @@ Each module has a header with a small interface and owns one concern.
 Watch loop: put the terminal in raw mode (ICANON and ECHO off), restore on exit
 and in a SIGINT/SIGTERM handler. Use `poll()` on stdin with a 250 ms timeout;
 on timeout, `stat` the current exercise file and its helper sources and rerun
-when any mtime changed. Keys: `n` next (only when done; reruns and, when all are
+when any mtime changed (compare `st_mtim` seconds and nanoseconds, since two
+saves can land in the same second). With no state file the current exercise
+is the first one. Keys: `n` next (only when done; reruns and, when all are
 done, runs check-all as rustlings does), `h` hint, `l` list then jump prompt,
 `x` reset after y/n confirmation, `r` rerun now, `q` quit. Input is ignored
 while an exercise is being checked. Render after every event: output block,
@@ -255,7 +262,7 @@ hint if requested, "Exercise done" line with solution path when done, progress
 bar sized to the terminal width, current path as an OSC 8 file link plus plain
 text, then the key prompt.
 
-List mode: print every exercise as `  N  DONE|PENDING  path` with `>` marking
+List mode: print every exercise as `  N  DONE|PENDING  path` (1-based) with `>` marking
 the current one, then prompt `Jump to (name or number, Enter to cancel):`. A
 valid answer sets the current exercise and the watcher reruns it.
 
