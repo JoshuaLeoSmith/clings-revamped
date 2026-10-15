@@ -17,3 +17,6 @@
 
 # Files written by the file I/O exercises
 *_out.txt
+
+# SDD scratch workspace
+/.superpowers/
