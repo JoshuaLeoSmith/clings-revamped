@@ -140,6 +140,40 @@ else
 fi
 expect_contains "needs a terminal"
 
+# dev check on the pristine copy
+for f in CMakeLists.txt Makefile src/main.c tests/unit/test_buf.c; do
+    if [ -f "$f" ]; then pass "copy includes $f"; else fail "copy includes $f"; fi
+done
+expect_exit 0 "$BIN" dev check
+expect_contains "All 2 exercises OK"
+
+# dev check: a solution that fails
+cp solutions/00_intro/intro2.c "$WORK/intro2_sol.pristine"
+echo 'int main(void) { return 1; }' > solutions/00_intro/intro2.c
+expect_exit 1 "$BIN" dev check
+expect_contains "intro2"
+expect_contains "solution: FAILS"
+cp "$WORK/intro2_sol.pristine" solutions/00_intro/intro2.c
+
+# dev check: an exercise edited without dev update
+cp exercises/00_intro/intro1.c "$WORK/intro1.pristine"
+echo "// scribble" >> exercises/00_intro/intro1.c
+expect_exit 1 "$BIN" dev check
+expect_contains "src/embedded.c is outdated"
+cp "$WORK/intro1.pristine" exercises/00_intro/intro1.c
+
+# CMake project
+if command -v cmake >/dev/null 2>&1; then
+    expect_exit 0 cmake -S . -B "$WORK/build"
+    expect_exit 0 cmake --build "$WORK/build" --target intro1
+    expect_exit 0 "$WORK/build/exercises/intro1"
+    expect_exit 0 cmake --build "$WORK/build" --target clings
+    expect_exit 0 cmake --build "$WORK/build" --target test_buf
+    expect_exit 0 ctest --test-dir "$WORK/build" -R test_buf
+else
+    echo "skip cmake not found; CMake checks skipped"
+fi
+
 echo
 echo "$PASSES passed, $FAILS failed"
 [ "$FAILS" -eq 0 ]

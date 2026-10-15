@@ -58,8 +58,72 @@ static void test_generate(void) {
     CHECK(system(cmd) == 0);
 }
 
+static void test_cmake_block(void) {
+    struct info_file f = {0};
+    char err[256] = "";
+    CHECK(info_parse("format_version = 1\n"
+                     "[[exercises]]\nname = \"intro1\"\ndir = \"00_intro\"\nhint = \"h\"\n"
+                     "[[exercises]]\nname = \"multifile1\"\ndir = \"17_multifile\"\n"
+                     "sources = [\"mathutil.c\"]\nhint = \"h\"\n",
+                     &f, err, sizeof err));
+    CHECK_EQ_STR(err, "");
+    struct buf out;
+    buf_init(&out);
+    dev_generate_cmake_block(&f, &out);
+    CHECK_EQ_STR(out.data ? out.data : "",
+                 "clings_exercise(intro1 00_intro)\n"
+                 "clings_solution(intro1 00_intro)\n"
+                 "clings_exercise(multifile1 17_multifile mathutil.c)\n"
+                 "clings_solution(multifile1 17_multifile mathutil.c)\n");
+    buf_free(&out);
+    info_free(&f);
+}
+
+static void replace(const char *text, const char *block, bool ok, const char *want) {
+    struct buf out;
+    buf_init(&out);
+    CHECK(dev_replace_cmake_block(text, block, &out) == ok);
+    if (ok) CHECK_EQ_STR(out.data ? out.data : "", want);
+    buf_free(&out);
+}
+
+static void test_replace_cmake_block(void) {
+    const char *head = "project(x C)\r\n  # keep   \n\n";
+    const char *begin = "# --- BEGIN GENERATED (clings dev update) ---\n";
+    const char *end = "# --- END GENERATED ---\n";
+    const char *tail = "\n# trailing\nmessage(done)";
+    char text[1024], want[1024];
+
+    snprintf(text, sizeof text, "%s%sold line 1\nold line 2\n%s%s", head, begin, end, tail);
+    snprintf(want, sizeof want, "%s%snew\n%s%s", head, begin, end, tail);
+    replace(text, "new\n", true, want);
+
+    /* empty region, empty block */
+    snprintf(text, sizeof text, "%s%s%s%s", head, begin, end, tail);
+    replace(text, "", true, text);
+
+    /* replacing with the same block is the identity */
+    snprintf(text, sizeof text, "%s%sa\nb\n%s%s", head, begin, end, tail);
+    replace(text, "a\nb\n", true, text);
+
+    /* markers must start a line; END marker without trailing newline */
+    snprintf(text, sizeof text, "x # --- BEGIN GENERATED\n%sold\n# --- END GENERATED", begin);
+    snprintf(want, sizeof want, "x # --- BEGIN GENERATED\n%snew\n# --- END GENERATED", begin);
+    replace(text, "new\n", true, want);
+
+    /* missing markers */
+    replace("project(x C)\n", "new\n", false, NULL);
+    snprintf(text, sizeof text, "%s%sold\n", head, begin);
+    replace(text, "new\n", false, NULL);
+    snprintf(text, sizeof text, "%sold\n%s", head, end);
+    replace(text, "new\n", false, NULL);
+    replace("", "", false, NULL);
+}
+
 int main(void) {
     test_escape();
     test_generate();
+    test_cmake_block();
+    test_replace_cmake_block();
     return clings_summary();
 }

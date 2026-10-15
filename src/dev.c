@@ -1,7 +1,16 @@
 #include "dev.h"
 
+#include <dirent.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
+#include "exercise.h"
+
+#define CMAKE_PATH "CMakeLists.txt"
+#define EMBEDDED_PATH "src/embedded.c"
+#define BEGIN_MARKER "# --- BEGIN GENERATED"
+#define END_MARKER "# --- END GENERATED"
 
 void embedded_escape_line(const char *line, size_t n, struct buf *out) {
     for (size_t i = 0; i < n; i++) {
@@ -61,25 +70,306 @@ void dev_generate_embedded(const struct info_file *info, struct buf *out) {
     if (!generate(info, out, &bad)) die("cannot read %s", bad);
 }
 
-static int update_embedded(const struct info_file *info) {
-    struct buf out;
-    buf_init(&out);
-    const char *bad = NULL;
-    if (!generate(info, &out, &bad)) {
-        buf_free(&out);
-        fprintf(stderr, "clings: cannot read %s\n", bad);
-        return 2;
+void dev_generate_cmake_block(const struct info_file *info, struct buf *out) {
+    static const char *const kinds[] = {"clings_exercise", "clings_solution"};
+    for (size_t i = 0; i < info->n; i++) {
+        const struct exercise_info *ex = &info->exercises[i];
+        for (size_t k = 0; k < 2; k++) {
+            buf_printf(out, "%s(%s %s", kinds[k], ex->name, ex->dir);
+            for (size_t j = 0; j < ex->n_sources; j++) buf_printf(out, " %s", ex->sources[j]);
+            buf_appends(out, ")\n");
+        }
     }
-    bool ok = file_write("src/embedded.c", out.data, out.len);
-    buf_free(&out);
-    if (!ok) {
-        fputs("clings: cannot write src/embedded.c\n", stderr);
-        return 2;
+}
+
+/* Start of the first line at or after from that begins with prefix, or NULL. */
+static const char *find_line(const char *from, const char *prefix) {
+    size_t n = strlen(prefix);
+    for (const char *line = from; *line;) {
+        if (!strncmp(line, prefix, n)) return line;
+        const char *nl = strchr(line, '\n');
+        if (!nl) break;
+        line = nl + 1;
     }
-    puts("Updated src/embedded.c");
-    return 0;
+    return NULL;
+}
+
+bool dev_replace_cmake_block(const char *cmake_text, const char *block, struct buf *out) {
+    const char *begin = find_line(cmake_text, BEGIN_MARKER);
+    if (!begin) return false;
+    const char *nl = strchr(begin, '\n');
+    if (!nl) return false;
+    const char *inner = nl + 1;
+    const char *end = find_line(inner, END_MARKER);
+    if (!end) return false;
+    buf_append(out, cmake_text, (size_t)(inner - cmake_text));
+    buf_appends(out, block);
+    buf_appends(out, end);
+    return true;
+}
+
+/* Fill *out with the regenerated CMakeLists.txt. Returns 0, or 2 after
+ * reporting an error. */
+static int regenerate_cmake(const struct info_file *info, struct buf *out) {
+    struct buf text, block;
+    buf_init(&text);
+    buf_init(&block);
+    int rc = 0;
+    if (!file_read(CMAKE_PATH, &text)) {
+        fputs("clings: cannot read " CMAKE_PATH "\n", stderr);
+        rc = 2;
+    } else {
+        buf_appends(&text, ""); /* NUL-terminate even when empty */
+        dev_generate_cmake_block(info, &block);
+        buf_appends(&block, "");
+        if (!dev_replace_cmake_block(text.data, block.data, out)) {
+            fputs("clings: " CMAKE_PATH " lacks the '" BEGIN_MARKER "' / '" END_MARKER
+                  "' marker lines\n",
+                  stderr);
+            rc = 2;
+        }
+    }
+    buf_free(&block);
+    buf_free(&text);
+    return rc;
+}
+
+static bool write_file(const char *path, const struct buf *b) {
+    if (!file_write(path, b->data ? b->data : "", b->len)) {
+        fprintf(stderr, "clings: cannot write %s\n", path);
+        return false;
+    }
+    printf("Updated %s\n", path);
+    return true;
 }
 
 int dev_update(const struct info_file *info) {
-    return update_embedded(info);
+    struct buf cmake, embedded;
+    buf_init(&cmake);
+    buf_init(&embedded);
+    const char *bad = NULL;
+    int rc = regenerate_cmake(info, &cmake);
+    if (rc == 0 && !generate(info, &embedded, &bad)) {
+        fprintf(stderr, "clings: cannot read %s\n", bad);
+        rc = 2;
+    }
+    if (rc == 0 && (!write_file(CMAKE_PATH, &cmake) || !write_file(EMBEDDED_PATH, &embedded)))
+        rc = 2;
+    buf_free(&embedded);
+    buf_free(&cmake);
+    return rc;
+}
+
+/* ---- dev check ---- */
+
+static void problem(size_t *count, const char *fmt, const char *arg) {
+    printf(fmt, arg);
+    putchar('\n');
+    (*count)++;
+}
+
+static bool path_listed(const char *path, char *const *listed, size_t n) {
+    for (size_t i = 0; i < n; i++)
+        if (!strcmp(path, listed[i])) return true;
+    return false;
+}
+
+static int cmp_str(const void *a, const void *b) {
+    return strcmp(*(char *const *)a, *(char *const *)b);
+}
+
+/* Report every regular .c file under dir that is not in listed. */
+static void walk_c_files(const char *dir, char *const *listed, size_t n, size_t *count) {
+    DIR *d = opendir(dir);
+    if (!d) {
+        problem(count, "cannot open directory %s", dir);
+        return;
+    }
+    char **names = NULL;
+    size_t nnames = 0, cap = 0;
+    struct dirent *de;
+    while ((de = readdir(d)) != NULL) {
+        if (!strcmp(de->d_name, ".") || !strcmp(de->d_name, "..")) continue;
+        if (nnames == cap) {
+            cap = cap ? cap * 2 : 16;
+            char **grown = realloc(names, cap * sizeof *names);
+            if (!grown) die("out of memory");
+            names = grown;
+        }
+        names[nnames++] = xstrdup(de->d_name);
+    }
+    closedir(d);
+    qsort(names, nnames, sizeof *names, cmp_str); /* stable report order */
+
+    struct buf path;
+    buf_init(&path);
+    for (size_t i = 0; i < nnames; i++) {
+        buf_clear(&path);
+        buf_printf(&path, "%s/%s", dir, names[i]);
+        struct stat sb;
+        if (lstat(path.data, &sb) != 0) continue;
+        size_t len = strlen(names[i]);
+        if (S_ISDIR(sb.st_mode))
+            walk_c_files(path.data, listed, n, count);
+        else if (S_ISREG(sb.st_mode) && len > 2 && !strcmp(names[i] + len - 2, ".c") &&
+                 !path_listed(path.data, listed, n))
+            problem(count, "unexpected file: %s", path.data);
+        free(names[i]);
+    }
+    buf_free(&path);
+    free(names);
+}
+
+/* Files exist and nothing stray lives under exercises/. Returns problem count. */
+static size_t check_structure(const struct info_file *info) {
+    size_t count = 0, nlisted = 0;
+    size_t cap = info->n;
+    for (size_t i = 0; i < info->n; i++) cap += info->exercises[i].n_sources;
+    char **listed = xmalloc((cap ? cap : 1) * sizeof *listed);
+    struct buf b;
+    buf_init(&b);
+    for (size_t i = 0; i < info->n; i++) {
+        const struct exercise_info *ex = &info->exercises[i];
+        listed[nlisted++] = xstrdup(ex->path);
+        if (!file_exists(ex->path)) problem(&count, "missing exercise file: %s", ex->path);
+        exercise_solution_path(ex, &b);
+        if (!file_exists(b.data)) problem(&count, "missing solution file: %s", b.data);
+        for (size_t j = 0; j < ex->n_sources; j++) {
+            exercise_dir(ex, &b);
+            buf_printf(&b, "/%s", ex->sources[j]);
+            listed[nlisted++] = xstrdup(b.data);
+            if (!file_exists(b.data)) problem(&count, "missing helper source: %s", b.data);
+        }
+    }
+    buf_free(&b);
+    walk_c_files("exercises", listed, nlisted, &count);
+    for (size_t i = 0; i < nlisted; i++) free(listed[i]);
+    free(listed);
+    return count;
+}
+
+static void print_indented(const struct buf *output) {
+    const char *p = output->data ? output->data : "";
+    size_t rest = output->len;
+    while (rest > 0) {
+        const char *nl = memchr(p, '\n', rest);
+        size_t n = nl ? (size_t)(nl - p) : rest;
+        printf("    %.*s\n", (int)n, p);
+        if (!nl) break;
+        rest -= n + 1;
+        p = nl + 1;
+    }
+}
+
+/* Unsolved must fail, solution must pass with -Werror. Returns problem count. */
+static size_t check_exercise(const struct exercise_info *ex, size_t i, size_t n) {
+    size_t count = 0;
+    struct buf output;
+    buf_init(&output);
+    printf("[%zu/%zu] %s\n", i, n, ex->name);
+    fflush(stdout);
+
+    if (ex->skip_check_unsolved) {
+        puts("  unsolved: skipped");
+    } else if (!exercise_check(ex, NULL, &output)) {
+        puts("  unsolved: fails ✓");
+    } else {
+        puts("  unsolved: PASSES ✗");
+        print_indented(&output);
+        count++;
+    }
+    fflush(stdout);
+
+    struct check_opts opts = {.solution = true, .werror = true};
+    if (exercise_check(ex, &opts, &output)) {
+        puts("  solution: passes ✓");
+    } else {
+        puts("  solution: FAILS ✗");
+        print_indented(&output);
+        count++;
+    }
+    fflush(stdout);
+    buf_free(&output);
+    return count;
+}
+
+static bool same(const struct buf *a, const struct buf *b) {
+    return a->len == b->len && (a->len == 0 || memcmp(a->data, b->data, a->len) == 0);
+}
+
+/* Generated files match what dev update would write. Returns problem count. */
+static size_t check_sync(const struct info_file *info) {
+    size_t count = 0;
+    struct buf disk, want;
+    buf_init(&disk);
+    buf_init(&want);
+
+    if (!file_read(CMAKE_PATH, &disk)) {
+        problem(&count, "%s is missing", CMAKE_PATH);
+    } else {
+        struct buf block;
+        buf_init(&block);
+        dev_generate_cmake_block(info, &block);
+        buf_appends(&block, "");
+        buf_appends(&disk, "");
+        if (!dev_replace_cmake_block(disk.data, block.data, &want))
+            problem(&count, "%s lacks the generated block markers", CMAKE_PATH);
+        else if (!same(&disk, &want))
+            problem(&count, "%s is outdated, run clings dev update", CMAKE_PATH);
+        buf_free(&block);
+    }
+
+    buf_clear(&disk);
+    buf_clear(&want);
+    const char *bad = NULL;
+    if (!file_read(EMBEDDED_PATH, &disk))
+        problem(&count, "%s is missing", EMBEDDED_PATH);
+    else if (!generate(info, &want, &bad))
+        problem(&count, "cannot read %s", bad);
+    else if (!same(&disk, &want))
+        problem(&count, "%s is outdated, run clings dev update", EMBEDDED_PATH);
+
+    buf_free(&want);
+    buf_free(&disk);
+    return count;
+}
+
+static bool selected(const struct exercise_info *ex, const char *const *filters, size_t nfilters) {
+    if (nfilters == 0) return true;
+    for (size_t i = 0; i < nfilters; i++)
+        if (!strcmp(filters[i], ex->name) || !strcmp(filters[i], ex->dir)) return true;
+    return false;
+}
+
+static void print_problems(size_t n) {
+    printf("%zu problem%s\n", n, n == 1 ? "" : "s");
+}
+
+int dev_check(const struct info_file *info, const char *const *filters, size_t nfilters) {
+    size_t nsel = 0;
+    for (size_t i = 0; i < info->n; i++)
+        if (selected(&info->exercises[i], filters, nfilters)) nsel++;
+    if (nsel == 0) {
+        fputs("clings: no exercises match the filters\n", stderr);
+        return 2;
+    }
+
+    size_t problems = check_structure(info);
+    if (problems) {
+        print_problems(problems);
+        return 1;
+    }
+
+    size_t done = 0;
+    for (size_t i = 0; i < info->n; i++)
+        if (selected(&info->exercises[i], filters, nfilters))
+            problems += check_exercise(&info->exercises[i], ++done, nsel);
+    problems += check_sync(info);
+
+    if (problems) {
+        print_problems(problems);
+        return 1;
+    }
+    printf("All %zu exercises OK\n", nsel);
+    return 0;
 }

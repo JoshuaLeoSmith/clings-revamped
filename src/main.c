@@ -29,7 +29,9 @@ static const char usage_text[] =
     "  reset NAME      Restore exercise NAME to its original contents\n"
     "  list            List all exercises with their state\n"
     "  check-all       Check every exercise and report which are pending\n"
-    "  dev check       Verify the exercise set (for exercise authors)\n"
+    "  dev check [NAME|DIR...]\n"
+    "                  Verify the exercise set, compiling only the selected\n"
+    "                  exercises (for exercise authors)\n"
     "  dev update      Regenerate CMakeLists.txt and the embedded originals (authors)\n"
     "\n"
     "Options:\n"
@@ -54,7 +56,9 @@ int main(int argc, char **argv) {
     struct cli cli = {getenv("CLINGS_EDIT_CMD")};
     if (cli.edit_cmd && !*cli.edit_cmd) cli.edit_cmd = NULL;
 
-    const char *args[3] = {NULL, NULL, NULL}; /* command and up to two operands */
+    /* Command and its operands; NULL-padded so args[1] and args[2] always exist. */
+    const char **args = xmalloc((size_t)(argc + 2) * sizeof *args);
+    for (int i = 0; i < argc + 2; i++) args[i] = NULL;
     int nargs = 0;
     for (int i = 1; i < argc; i++) {
         const char *a = argv[i];
@@ -70,7 +74,6 @@ int main(int argc, char **argv) {
         } else if (a[0] == '-' && a[1]) {
             return usage_error("unknown option %s", a);
         } else {
-            if (nargs == 3) return usage_error("unexpected argument %s", a);
             args[nargs++] = a;
         }
     }
@@ -90,8 +93,10 @@ int main(int argc, char **argv) {
     } else if (!strcmp(cmd, "list") || !strcmp(cmd, "check-all")) {
         if (nargs > 1) return usage_error("unexpected argument %s", args[1]);
     } else if (!strcmp(cmd, "dev")) {
-        if (nargs != 2 || (strcmp(args[1], "check") && strcmp(args[1], "update")))
+        if (nargs < 2 || (strcmp(args[1], "check") && strcmp(args[1], "update")))
             return usage_error("%s needs 'check' or 'update'", cmd);
+        if (!strcmp(args[1], "update") && nargs > 2)
+            return usage_error("unexpected argument %s", args[2]);
     } else {
         return usage_error("unknown command %s", cmd);
     }
@@ -134,6 +139,8 @@ int main(int argc, char **argv) {
         rc = cmd_reset(&st, args[1]);
     } else if (!strcmp(cmd, "dev") && !strcmp(args[1], "update")) {
         rc = dev_update(&info);
+    } else if (!strcmp(cmd, "dev") && !strcmp(args[1], "check")) {
+        rc = dev_check(&info, args + 2, (size_t)(nargs - 2));
     } else {
         fprintf(stderr, "clings: %s not implemented yet\n", cmd);
         rc = 2;
@@ -142,5 +149,6 @@ int main(int argc, char **argv) {
 
     state_free(&st);
     info_free(&info);
+    free(args);
     return rc;
 }
