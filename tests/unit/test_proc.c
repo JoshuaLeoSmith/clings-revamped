@@ -110,6 +110,36 @@ int main(void) {
         proc_result_free(&r);
     }
 
+    /* background descendant holds the pipe after a normal exit */
+    {
+        const char *const argv[] = {"sh", "-c", "echo hi; (sleep 2) & exit 0",
+                                    NULL};
+        double t0 = now_s();
+        CHECK(proc_run(argv, NULL, NULL, 300, 4096, &r));
+        double elapsed = now_s() - t0;
+        CHECK(r.exited);
+        CHECK_EQ_INT(r.status, 0);
+        CHECK(!r.timed_out);
+        CHECK(r.output.data && strstr(r.output.data, "hi"));
+        CHECK(elapsed < 1.5);
+        proc_result_free(&r);
+    }
+
+    /* same, with no timeout: must not wait for the descendant */
+    {
+        const char *const argv[] = {"sh", "-c", "echo hi; (sleep 2) & exit 0",
+                                    NULL};
+        double t0 = now_s();
+        CHECK(proc_run(argv, NULL, NULL, 0, 4096, &r));
+        double elapsed = now_s() - t0;
+        CHECK(r.exited);
+        CHECK_EQ_INT(r.status, 0);
+        CHECK(!r.timed_out);
+        CHECK(r.output.data && strstr(r.output.data, "hi"));
+        CHECK(elapsed < 1.5);
+        proc_result_free(&r);
+    }
+
     /* detached spawn */
     {
         char dir[] = "/tmp/clings_proc_XXXXXX";

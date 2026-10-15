@@ -11,9 +11,12 @@
 #include <time.h>
 #include <unistd.h>
 
-/* After the child is killed, wait at most this long for the output pipe to
- * reach EOF (a surviving grandchild may hold it open). */
+/* After the child is killed or has exited, wait at most this long for the
+ * output pipe to reach EOF (a surviving grandchild may hold it open). */
 #define DRAIN_AFTER_KILL_MS 500
+
+/* While the child runs, check this often whether it has exited. */
+#define REAP_POLL_MS 50
 
 static void ignore_sigpipe(void) {
     static bool done;
@@ -124,59 +127,66 @@ bool proc_run(const char *const argv[], const char *cwd,
     }
 
     long long deadline = timeout_ms > 0 ? now_ms() + timeout_ms : -1;
-    long long drain_deadline = -1;
-    bool killed = false;
+    long long drain_deadline = -1; /* set once the child is dead or killed */
+    bool killed = false;  /* we sent SIGKILL */
+    bool discard = false; /* stop collecting output (killed or capped) */
+    bool reaped = false;  /* waitpid already collected the child */
+    int st = 0;
     char chunk[4096];
 
     for (;;) {
-        int wait_ms = -1;
         long long t = now_ms();
-        if (!killed && deadline >= 0) {
-            if (t >= deadline) {
-                kill(pid, SIGKILL);
-                killed = true;
-                out->timed_out = true;
-                drain_deadline = t + DRAIN_AFTER_KILL_MS;
-            } else {
-                wait_ms = (int)(deadline - t);
-            }
+        if (!reaped && !killed && deadline >= 0 && t >= deadline) {
+            kill(pid, SIGKILL);
+            killed = discard = true;
+            out->timed_out = true;
+            drain_deadline = t + DRAIN_AFTER_KILL_MS;
         }
-        if (killed) {
-            if (t >= drain_deadline) break;
-            wait_ms = (int)(drain_deadline - t);
-        }
+        if (drain_deadline >= 0 && t >= drain_deadline) break;
+
+        /* While the child may be alive, wake up periodically to reap it:
+         * a background descendant can hold the pipe open after it exits. */
+        long long limit = -1;
+        if (!reaped) limit = t + REAP_POLL_MS;
+        if (!killed && deadline >= 0 && (limit < 0 || deadline < limit))
+            limit = deadline;
+        if (drain_deadline >= 0 && (limit < 0 || drain_deadline < limit))
+            limit = drain_deadline;
+        int wait_ms = limit < 0 ? -1 : (int)(limit > t ? limit - t : 0);
 
         struct pollfd pfd = {.fd = opipe[0], .events = POLLIN};
         int pr = poll(&pfd, 1, wait_ms);
-        if (pr < 0) {
-            if (errno == EINTR) continue;
-            break;
+        if (pr < 0 && errno != EINTR) break;
+        if (pr > 0) {
+            ssize_t n = read(opipe[0], chunk, sizeof chunk);
+            if (n == 0) break; /* EOF */
+            if (n < 0 && errno != EINTR && errno != EAGAIN) break;
+            if (n > 0 && !discard) {
+                size_t room = max_output - out->output.len;
+                if ((size_t)n > room) {
+                    buf_append(&out->output, chunk, room);
+                    out->truncated = true;
+                    discard = true;
+                    if (!reaped) {
+                        kill(pid, SIGKILL);
+                        killed = true;
+                    }
+                    if (drain_deadline < 0)
+                        drain_deadline = now_ms() + DRAIN_AFTER_KILL_MS;
+                } else {
+                    buf_append(&out->output, chunk, (size_t)n);
+                }
+            }
         }
-        if (pr == 0) continue; /* deadline handling at loop top */
-
-        ssize_t n = read(opipe[0], chunk, sizeof chunk);
-        if (n < 0) {
-            if (errno == EINTR || errno == EAGAIN) continue;
-            break;
-        }
-        if (n == 0) break; /* EOF */
-        if (killed) continue; /* discard while draining */
-
-        size_t room = max_output - out->output.len;
-        if ((size_t)n > room) {
-            buf_append(&out->output, chunk, room);
-            kill(pid, SIGKILL);
-            killed = true;
-            out->truncated = true;
-            drain_deadline = now_ms() + DRAIN_AFTER_KILL_MS;
-        } else {
-            buf_append(&out->output, chunk, (size_t)n);
+        if (!reaped && waitpid(pid, &st, WNOHANG) == pid) {
+            reaped = true;
+            if (drain_deadline < 0)
+                drain_deadline = now_ms() + DRAIN_AFTER_KILL_MS;
         }
     }
     close_fd(&opipe[0]);
 
-    int st;
-    while (waitpid(pid, &st, 0) < 0) {
+    while (!reaped && waitpid(pid, &st, 0) < 0) {
         if (errno != EINTR) return true; /* cannot happen: pid is ours */
     }
     if (WIFEXITED(st)) {
