@@ -313,3 +313,82 @@ Write each function with an `int` parameter list and an `int` return type,
 above `main`. `%` gives the remainder, which tells you whether one number
 divides another; the gcd needs a `while` loop.
 See K&R 2.5, 3.5 and Beej 3.2."""
+
+# ARRAYS
+
+[[exercises]]
+name = "arrays1"
+dir = "09_arrays"
+hint = """
+An array declaration gives the element type, the name, and the number of
+elements in square brackets. Indexes start at 0, so the last one is one
+less than the size.
+See K&R 1.6 and Beej 6."""
+
+[[exercises]]
+name = "arrays2"
+dir = "09_arrays"
+strict = true
+hint = """
+Inside the function, `values` is a pointer, so sizeof measures the pointer.
+The caller already knows the length and hands it to you.
+See K&R 5.7 and Beej 6."""
+
+[[exercises]]
+name = "arrays3"
+dir = "09_arrays"
+hint = """
+How many times does the loop run, and what is the largest index it uses?
+Compare that with the largest valid index of a 5-element array.
+See K&R 1.6 and Beej 6."""
+
+[[exercises]]
+name = "arrays4"
+dir = "09_arrays"
+hint = """
+`grid[row]` is itself an array of 4 ints, so `grid[row][c]` picks one of
+them. For the whole grid, loop over the rows; `sum_all` may call `sum_row`.
+See K&R 5.7 and Beej 6."""
+
+# STRINGS
+
+[[exercises]]
+name = "strings1"
+dir = "10_strings"
+hint = """
+Count the chars the array must hold, including the '\\0' at the end. You may
+also leave the size out and let the compiler count from the initializer.
+See K&R 1.9 and Beej 7."""
+
+[[exercises]]
+name = "strings2"
+dir = "10_strings"
+hint = """
+Keep an index, starting at 0, and move it forward while `s[index]` is not
+'\\0'. When the loop stops, the index is the length.
+See K&R 1.9 and Beej 7."""
+
+[[exercises]]
+name = "strings3"
+dir = "10_strings"
+hint = """
+Count the chars in "Hello, world!", then add one for the '\\0'. The array
+must be at least that big.
+See K&R 7.8.1 and Beej 7."""
+
+[[exercises]]
+name = "strings4"
+dir = "10_strings"
+strict = true
+hint = """
+Two strings with the same chars can live at different addresses. Look up
+what `strcmp` returns when its arguments are equal.
+See K&R 7.8.1 and Beej 7."""
+
+[[exercises]]
+name = "strings5"
+dir = "10_strings"
+hint = """
+For `reverse`, find the length first, then swap s[i] with its mirror
+position until you reach the middle. <ctype.h> has `toupper`.
+See K&R 1.9 and Beej 21."""

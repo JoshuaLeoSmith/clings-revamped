@@ -1,0 +1,33 @@
+// Fix: an array passed to a function decays to a pointer to its first element,
+// so the length is lost; the caller computes it with sizeof and passes it in.
+/*
+ * arrays2
+ *
+ * In `main`, `sizeof(nums) / sizeof(nums[0])` counts the elements. Inside
+ * `sum` the same trick fails: an array parameter is really a pointer to the
+ * first element, so `sizeof(values)` is the size of a pointer. The compiler
+ * warns, and warnings count as errors here. Use the length you are given.
+ * See K&R 5.7 and Beej 6.
+ */
+
+#include <stddef.h>
+
+#include "clings.h"
+
+int sum(int values[], size_t n) {
+    int total = 0;
+    for (size_t i = 0; i < n; i++) {
+        total += values[i];
+    }
+    return total;
+}
+
+int main(void) {
+    int nums[] = {1, 2, 3, 4, 5};
+    size_t len = sizeof(nums) / sizeof(nums[0]);
+
+    // Don't change the tests!
+    CHECK_EQ_INT(len, 5);
+    CHECK_EQ_INT(sum(nums, len), 15);
+    return clings_summary();
+}
