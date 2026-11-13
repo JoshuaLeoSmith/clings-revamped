@@ -1,14 +1,25 @@
 # clings
 
-Small exercises to get you used to reading and writing C, in the style of
-[rustlings](https://github.com/rust-lang/rustlings). It is made for people who
-already program in another language and are new to C.
+clings is supposed to be like
+[rustlings](https://github.com/rust-lang/rustlings), but for C: small exercises
+to get you used to reading and writing C. It is made for people who already
+program in another language and are new to C.
+
+> **A confession.** I set out to learn C properly, with no AI coding assistant
+> doing the thinking for me. So, naturally, the first thing I did was vibe code
+> an entire tool to help me do that. The irony compiles cleanly, even with
+> `-Wall -Wextra`.
+>
+> The good news is that the runner cannot write a single line of C for you.
+> Every missing semicolon and every segfault in here is yours to fix by hand.
 
 There are 88 exercises in 25 topics, plus 3 quizzes. Each one is a short C file
 that does not compile or does not pass its checks yet. You fix it, save, and
 clings reruns it. When it passes, you move on.
 
 ```sh
+git clone https://github.com/JoshuaLeoSmith/clings-revamped.git
+cd clings-revamped
 make        # build the runner
 ./clings    # start watch mode
 ```
@@ -37,7 +48,7 @@ points to the matching K&R sections and Beej chapters. The full map is in
 Run clings from the project root (the folder with `info.toml`):
 
 ```sh
-cd clings
+cd clings-revamped
 make
 ./clings
 ```
@@ -51,7 +62,7 @@ continue where you stopped.
 
 ## Use CLion
 
-1. File > Open, and choose the `clings` folder. CLion loads `CMakeLists.txt`
+1. File > Open, and choose the `clings-revamped` folder. CLion loads `CMakeLists.txt`
    and creates one target per exercise.
 2. Open CLion's Terminal tab and run:
 
@@ -204,3 +215,7 @@ make test                  # unit and command-line tests of the runner
 ```
 
 `dev check` also fails when `dev update` has not been run since the last change.
+
+## License
+
+[MIT](LICENSE). Use it, change it, share it.
